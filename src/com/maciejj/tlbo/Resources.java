@@ -17,12 +17,18 @@ public class Resources {
             Arrays.asList(0.386, 0.394, 0.402, 0.41, 0.418, 0.426, 0.434, 0.463, 0.487, 0.43, 0.492, 0.534, 0.63, 0.567, 0.54, 0.59, 0.776, 1.048, 1.061, 1.073, 1.121, 1.319, 1.307, 1.311, 1.357, 1.436, 1.472, 1.45, 1.445, 1.396, 1.328, 1.358, 1.387, 1.318, 1.253, 1.136, 1.19, 1.139, 1.045, 0.628, 0.839, 0.786, 0.743, 0.729, 0.72, 0.528, 0.48, 0.706, 0.788, 0.784)
     ));
 
-    public static List<Double> getXData() {
+    private static int degree = 6;
+
+    static List<Double> getXData() {
         return x;
     }
 
-    public static List<Double> getY() {
+    static List<Double> getY() {
         return y;
+    }
+
+    static int getDegree() {
+        return degree;
     }
 
 }

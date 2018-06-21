@@ -42,6 +42,15 @@ class Polynomial {
         return generate(supplyWithRandomCoefficient(random)).limit(degree).toArray(Double[]::new);
     }
 
+    private Supplier<Double> supplyWithRandomCoefficient(Random random){
+        return ()->random.nextDouble()/10000000000000000000.0;
+    }
+
+    public void updateCoefficients(Double[] coefficients) {
+        assert coefficients.length == this.coefficients.length;
+        this.coefficients = coefficients;
+    }
+
     void RecalculateValues() {
 
     }
@@ -50,13 +59,11 @@ class Polynomial {
         return y;
     }
 
-    private Supplier<Double> supplyWithRandomCoefficient(Random random){
-        return ()->random.nextDouble()/10000000000000000000.0;
+    public Double[] getCoefficients() {
+        return coefficients;
     }
-
-    public void updateCoefficients(Double[] coefficients) {
-        assert coefficients.length == this.coefficients.length;
-        this.coefficients = coefficients;
+    public Double getCoefficient(int i) {
+        return coefficients[i];
     }
 
 

@@ -19,10 +19,10 @@ class Polynomial {
         this.x = Resources.getXData();
         this.y = new LinkedList<>(Stream.generate(() -> 0d).limit(x.size()).collect(Collectors.toList()));
         coefficients = drawCoefficients(degree);
-        recalculateY();
+        recalculateYValues();
     }
 
-    private void recalculateY() {
+    public void recalculateYValues() {
         for(int i = 0; i < x.size(); i++){
             y.set(i, calculateY(x.get(i)));
         }
@@ -49,10 +49,12 @@ class Polynomial {
     public void updateCoefficients(Double[] coefficients) {
         assert coefficients.length == this.coefficients.length;
         this.coefficients = coefficients;
+        recalculateYValues();
     }
 
-    void RecalculateValues() {
-
+    public void updateCoefficient(int index, Double coefficient) {
+        assert index < this.coefficients.length;
+        this.coefficients[index] = coefficient;
     }
 
     public List<Double> getY() {

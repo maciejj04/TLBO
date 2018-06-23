@@ -18,31 +18,34 @@ class TLBO {
     private List<Polynomial> polynomials;
     private double threshold;
     private Polynomial currentBestPolynomial = null;
-    private double currentBestPolynomialFitValue = Double.MAX_VALUE;
+    private Double currentBestPolynomialFitValue = Double.MAX_VALUE;
 
     TLBO(int populaion, double threshold) {
         polynomials = Stream.generate(() -> new Polynomial(6)).limit(populaion).collect(toList());
         this.threshold = threshold;
     }
 
-    void runAlgorythm() throws Exception {
+    Polynomial runAlgorythm() throws Exception {
         while (correlate(Resources.getY(), (currentBestPolynomial = findBestPolynomial()).getY()) > threshold) {
             assert currentBestPolynomial != null;
             teacherPhase();
             learnerPhase();
         }
+
+        currentBestPolynomial.recalculateYValues();
+        System.out.println("Best fitted polnomial fit value = " + currentBestPolynomialFitValue);
+        return currentBestPolynomial;
     }
 
     private void teacherPhase() {
         Random randomGenerator = new Random();
-        IntStream.range(0, polynomials.size()).forEach(i -> {
-//            Polynomial polynomial = polynomials.get(i);
+        IntStream.range(0, getPopulationCount()).forEach(i -> {
+
             Polynomial newSolution = new Polynomial(getDegree());
 
             IntStream.range(0, getDegree()).forEach(j -> {
-                double[] coefficientsMeans = calculateCoefficientsMean();
                 double Tf = randomIntInRange(1, 2);
-                double differenceMean = randomGenerator.nextDouble() * (currentBestPolynomial.getCoefficient(j) - Tf * coefficientsMeans[j]);
+                double differenceMean = randomGenerator.nextDouble() * (currentBestPolynomial.getCoefficient(j) - Tf * calculateCoefficientsMean()[j]);
 
                 newSolution.updateCoefficient(j, polynomials.get(i).getCoefficient(j) + differenceMean);
             });
@@ -58,11 +61,37 @@ class TLBO {
             if (newSolutionFit < currentBestPolynomialFitValue) {
                 polynomials.set(i, newSolution);
                 currentBestPolynomial = newSolution;
-                currentBestPolynomialFitValue = correlator.correlate(currentBestPolynomial.getY());
+                currentBestPolynomialFitValue = newSolutionFit;
             }
-
         });
+    }
 
+    private void learnerPhase() {
+        DataSetCorrelator correlator = new DataSetCorrelator(Resources.getY());
+        Random randomGenerator = new Random();
+        for (int i = 0; i < getPopulationCount(); i++) {
+            Polynomial p = polynomials.get(i);
+            Polynomial randomPoly;
+            while ((randomPoly = polynomials.get(randomIntInRange(0, getPopulationCount() - 1))) == p) ;
+            final Polynomial randomPolynomial = randomPoly;
+
+            double randomPolymonialFitValue = correlator.correlate(randomPolynomial.getY());
+            double currentPolymonialFitvalue = correlator.correlate(p.getY());
+            Polynomial newSolution = new Polynomial(getDegree());
+            if (randomPolymonialFitValue < currentPolymonialFitvalue) {
+                forEachCoefficient.accept((j) ->
+                        newSolution.updateCoefficient(j, p.getCoefficient(j) + randomGenerator.nextDouble() * (randomPolynomial.getCoefficient(j) - (p.getCoefficient(j)))));
+            } else {
+                forEachCoefficient.accept((j) ->
+                        newSolution.updateCoefficient(j, p.getCoefficient(j) + randomGenerator.nextDouble() * (p.getCoefficient(j) - randomPolynomial.getCoefficient(j))));
+            }
+            newSolution.recalculateYValues();
+            Double newSolutionFit = correlator.correlate(newSolution.getY());
+
+            if (newSolutionFit < currentPolymonialFitvalue) {
+                polynomials.set(i, newSolution);
+            }
+        }
     }
 
     private double[] calculateCoefficientsMean() {
@@ -74,36 +103,10 @@ class TLBO {
             }
         });
 
-        return stream(means).map(d -> d / polynomials.size()).toArray();
+        return stream(means).map(d -> d / getPopulationCount()).toArray();
     }
 
-    Consumer<Consumer<Integer>> forEachCoefficient = (consumer) -> {
-        IntStream.range(0, getDegree()).forEach(consumer::accept);
-    };
-
-    private void learnerPhase() {
-        DataSetCorrelator correlator = new DataSetCorrelator(Resources.getY());
-        Random randomGenerator = new Random();
-        for (Polynomial p : polynomials) {
-            Polynomial randomPolynomial;
-            while ((randomPolynomial = polynomials.get(randomIntInRange(0, polynomials.size() - 1))) == p);
-
-            double randomPolymonialFitValue = correlator.correlate(randomPolynomial.getY());
-            double currentPolymonialFitvalue = correlator.correlate(p.getY());
-            Polynomial newSolution = new Polynomial(getDegree());
-            if (randomPolymonialFitValue < currentPolymonialFitvalue) {
-                forEachCoefficient.accept((i) ->
-                        newSolution.updateCoefficient(i, p.getCoefficient(i) + randomGenerator.nextDouble() * (p.getCoefficient(i) - randomPolynomial.getCoefficient(i))));
-            } else {
-                forEachCoefficient.accept((i) ->
-                        newSolution.updateCoefficient(i, p.getCoefficient(i) + randomGenerator.nextDouble() * (randomPolynomial.getCoefficient(i) - (p.getCoefficient(i)))));
-            }
-            newSolution.recalculateYValues();
-            // TODO: last if
-
-        }
-
-    }
+    private Consumer<Consumer<Integer>> forEachCoefficient = (consumer) -> IntStream.range(0, getDegree()).forEach(consumer::accept);
 
     private int getPopulationCount() {
         return polynomials.size();
@@ -115,9 +118,11 @@ class TLBO {
         return polynomials.stream()
                 .map(p -> new Object[]{correlator.correlate(p.getY()), p})
                 .min(Comparator.comparingDouble(o -> (Double) o[0]))
-                .map(o -> (Polynomial) o[1])
+                .map(o -> {
+                    currentBestPolynomialFitValue = (Double) o[0];
+                    return (Polynomial) o[1];
+                })
                 .orElseThrow(Exception::new);
-
     }
 
     private Integer randomIntInRange(int from, int to) {

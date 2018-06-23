@@ -1,6 +1,5 @@
 package com.maciejj.tlbo;
 
-import java.util.Comparator;
 import java.util.List;
 
 import static java.lang.Math.abs;
@@ -25,7 +24,4 @@ public class DataSetCorrelator {
         }
         return result;
     }
-//    public static Comparator<Integer> compare(){
-//
-//    }
 }
